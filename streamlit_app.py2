@@ -1,31 +1,75 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Convert date column if available
-if "order_date" in df.columns:
-    df["order_date"] = pd.to_datetime(df["order_date"])
-    df["month_year"] = df["order_date"].dt.to_period("M")
+# --------------------------
+# Streamlit App
+# --------------------------
 
-    st.subheader("Orders per Month")
-    monthly_orders = df.groupby("month_year")["order_id"].count()
+st.title("E-Commerce Data Analysis")
 
-    fig, ax = plt.subplots()
-    monthly_orders.plot(kind="bar", ax=ax)
-    ax.set_ylabel("Number of Orders")
-    ax.set_title("Number of Orders by Month")
+# File uploader
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+
+if uploaded_file is not None:
+    # Read file
+    df_new = pd.read_csv(uploaded_file)
+
+    # Show preview
+    st.subheader("Dataset Preview")
+    st.write(df_new.head())
+
+    # Define color palette
+    color = sns.color_palette("Set2")
+
+    # --------------------------
+    # Plot 1: Orders per Hour
+    # --------------------------
+    st.subheader("📊 Number of Orders for Different Hours")
+
+    fig, ax = plt.subplots(figsize=(15,6))
+    (df_new.groupby('invoice_num')['hour']
+          .unique()
+          .value_counts()
+          .iloc[:-1]
+          .sort_index()
+          .plot(kind='bar', color=color[0], ax=ax))
+
+    ax.set_xlabel('Hour', fontsize=15)
+    ax.set_ylabel('Number of Orders', fontsize=15)
+    ax.set_title('Number of Orders for Different Hours', fontsize=15)
+    ax.set_xticklabels(range(6,21), rotation='horizontal', fontsize=12)
+
     st.pyplot(fig)
-if "region" in df.columns:
-    st.subheader("Orders by Region")
-    region_orders = df.groupby("region")["order_id"].count().sort_values()
 
-    fig, ax = plt.subplots(figsize=(8,5))
-    region_orders.plot(kind="barh", ax=ax, color="skyblue")
-    ax.set_xlabel("Number of Orders")
-    ax.set_ylabel("Region")
-    ax.set_title("Orders by Region")
+    # --------------------------
+    # Plot 2: Orders per Customer
+    # --------------------------
+    st.subheader("📊 Number of Orders for Different Customers")
+
+    orders = df_new.groupby(by=['cust_id','country'], as_index=False)['invoice_num'].count()
+
+    fig, ax = plt.subplots(figsize=(15,6))
+    ax.plot(orders.cust_id, orders.invoice_num, marker='o', linestyle='-')
+    ax.set_xlabel('Customer ID')
+    ax.set_ylabel('Number of Orders')
+    ax.set_title('Number of Orders for Different Customers')
+
     st.pyplot(fig)
-if "price" in df.columns:
-    st.subheader("Price Distribution")
-    fig, ax = plt.subplots(figsize=(8,5))
-    sns.boxplot(x=df["price"], ax=ax)
-    ax.set_title("Distribution of Product Prices")
+
+    # --------------------------
+    # Plot 3: Orders by Country
+    # --------------------------
+    st.subheader("📊 Number of Orders for Different Countries")
+
+    group_country_orders = df_new.groupby('country')['invoice_num'].count().sort_values()
+
+    fig, ax = plt.subplots(figsize=(15,8))
+    group_country_orders.plot(kind='barh', fontsize=12, color=color[0], ax=ax)
+
+    ax.set_xlabel('Number of Orders', fontsize=12)
+    ax.set_ylabel('Country', fontsize=12)
+    ax.set_title('Number of Orders for Different Countries', fontsize=12)
+
     st.pyplot(fig)
