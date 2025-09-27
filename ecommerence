@@ -1,0 +1,31 @@
+import seaborn as sns
+
+# Convert date column if available
+if "order_date" in df.columns:
+    df["order_date"] = pd.to_datetime(df["order_date"])
+    df["month_year"] = df["order_date"].dt.to_period("M")
+
+    st.subheader("Orders per Month")
+    monthly_orders = df.groupby("month_year")["order_id"].count()
+
+    fig, ax = plt.subplots()
+    monthly_orders.plot(kind="bar", ax=ax)
+    ax.set_ylabel("Number of Orders")
+    ax.set_title("Number of Orders by Month")
+    st.pyplot(fig)
+if "region" in df.columns:
+    st.subheader("Orders by Region")
+    region_orders = df.groupby("region")["order_id"].count().sort_values()
+
+    fig, ax = plt.subplots(figsize=(8,5))
+    region_orders.plot(kind="barh", ax=ax, color="skyblue")
+    ax.set_xlabel("Number of Orders")
+    ax.set_ylabel("Region")
+    ax.set_title("Orders by Region")
+    st.pyplot(fig)
+if "price" in df.columns:
+    st.subheader("Price Distribution")
+    fig, ax = plt.subplots(figsize=(8,5))
+    sns.boxplot(x=df["price"], ax=ax)
+    ax.set_title("Distribution of Product Prices")
+    st.pyplot(fig)
